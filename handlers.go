@@ -189,7 +189,14 @@ func (h *TaskHandler) AddTaskNote(c *gin.Context) {
 		return
 	}
 
-	task.AddNote(noteInput.Content)
+	// Get username from context (set by AuthMiddleware)
+	username, exists := c.Get("username")
+	if !exists {
+		// If username doesn't exist in context, use "unknown" as fallback
+		task.AddNote(noteInput.Content, "unknown")
+	} else {
+		task.AddNote(noteInput.Content, username.(string))
+	}
 	if err := h.storage.Update(task); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

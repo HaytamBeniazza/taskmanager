@@ -76,7 +76,7 @@ func main() {
 		task1.DueDate = time.Now().Add(24 * time.Hour)
 		task1.AddTag("go")
 		task1.AddTag("programming")
-		task1.AddNote("Focus on understanding goroutines and channels")
+		task1.AddNote("Focus on understanding goroutines and channels", "system")
 
 		task2 := NewTask("Build a web API", "Create a task manager REST API in Go")
 		task2.Category = "Development"
@@ -85,7 +85,7 @@ func main() {
 		task2.AddTag("go")
 		task2.AddTag("api")
 		task2.AddTag("rest")
-		task2.AddNote("Use Gin framework for routing")
+		task2.AddNote("Use Gin framework for routing", "system")
 
 		task3 := NewTask("Learn concurrency", "Study goroutines and channels")
 		task3.Category = "Learning"

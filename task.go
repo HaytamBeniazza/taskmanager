@@ -19,6 +19,9 @@ type Recurrence struct {
 	Interval       int       // interval between occurrences
 	EndDate        time.Time // when to stop recurring
 	LastOccurrence time.Time // when the task last occurred
+	DaysOfWeek     []int     // for weekly pattern (0=Sunday, 6=Saturday)
+	DayOfMonth     int       // for monthly pattern
+	MonthOfYear    int       // for yearly pattern
 }
 
 // Note represents a comment or note on a task
@@ -27,21 +30,47 @@ type Note struct {
 	Content   string
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	Author    string    // who created the note
+}
+
+// Attachment represents a file attached to a task
+type Attachment struct {
+	ID          int       `json:"id"`
+	Filename    string    `json:"filename"`
+	ContentType string    `json:"contentType"`
+	Size        int64     `json:"size"`
+	UploadedAt  time.Time `json:"uploadedAt"`
+	Path        string    `json:"path"`
+}
+
+// Subtask represents a smaller task within a parent task
+type Subtask struct {
+	ID          int       `json:"id"`
+	Title       string    `json:"title"`
+	Completed   bool      `json:"completed"`
+	CreatedAt   time.Time `json:"createdAt"`
+	CompletedAt time.Time `json:"completedAt,omitempty"`
 }
 
 // Task represents a task in our task manager
 type Task struct {
-	ID          int         `json:"id"`
-	Title       string      `json:"title"`
-	Description string      `json:"description"`
-	Completed   bool        `json:"completed"`
-	CreatedAt   time.Time   `json:"createdAt"`
-	DueDate     time.Time   `json:"dueDate"`
-	Category    string      `json:"category"`
-	Priority    Priority    `json:"priority"`
-	Tags        []string    `json:"tags"`
-	Notes       []Note      `json:"notes"`
-	Recurrence  *Recurrence // Recurrence pattern (optional)
+	ID           int          `json:"id"`
+	Title        string       `json:"title"`
+	Description  string       `json:"description"`
+	Completed    bool         `json:"completed"`
+	CreatedAt    time.Time    `json:"createdAt"`
+	DueDate      time.Time    `json:"dueDate"`
+	CompletedAt  time.Time    `json:"completedAt,omitempty"`
+	Category     string       `json:"category"`
+	Priority     Priority     `json:"priority"`
+	Tags         []string     `json:"tags"`
+	Notes        []Note       `json:"notes"`
+	Recurrence   *Recurrence  `json:"recurrence,omitempty"` // Recurrence pattern (optional)
+	Subtasks     []Subtask    `json:"subtasks,omitempty"`
+	Attachments  []Attachment `json:"attachments,omitempty"`
+	AssignedTo   string       `json:"assignedTo,omitempty"` // Username of assignee
+	CreatedBy    string       `json:"createdBy,omitempty"`  // Username of creator
+	SharedWith   []string     `json:"sharedWith,omitempty"` // Usernames of people with access
 }
 
 // NewTask creates a new task with the given title and description
@@ -53,16 +82,20 @@ func NewTask(title, description string) *Task {
 		Priority:    Medium,
 		Tags:        make([]string, 0),
 		Notes:       make([]Note, 0),
+		Subtasks:    make([]Subtask, 0),
+		Attachments: make([]Attachment, 0),
+		SharedWith:  make([]string, 0),
 	}
 }
 
 // AddNote adds a new note to the task
-func (t *Task) AddNote(content string) {
+func (t *Task) AddNote(content string, author string) {
 	note := Note{
 		ID:        len(t.Notes) + 1,
 		Content:   content,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),
+		Author:    author,
 	}
 	t.Notes = append(t.Notes, note)
 }
@@ -104,6 +137,110 @@ func (t *Task) RemoveTag(tag string) bool {
 		}
 	}
 	return false
+}
+
+// AddSubtask adds a new subtask to the task
+func (t *Task) AddSubtask(title string) {
+	subtask := Subtask{
+		ID:        len(t.Subtasks) + 1,
+		Title:     title,
+		Completed: false,
+		CreatedAt: time.Now(),
+	}
+	t.Subtasks = append(t.Subtasks, subtask)
+}
+
+// CompleteSubtask marks a subtask as completed
+func (t *Task) CompleteSubtask(subtaskID int) bool {
+	for i, subtask := range t.Subtasks {
+		if subtask.ID == subtaskID {
+			t.Subtasks[i].Completed = true
+			t.Subtasks[i].CompletedAt = time.Now()
+			return true
+		}
+	}
+	return false
+}
+
+// ReopenSubtask marks a subtask as not completed
+func (t *Task) ReopenSubtask(subtaskID int) bool {
+	for i, subtask := range t.Subtasks {
+		if subtask.ID == subtaskID {
+			t.Subtasks[i].Completed = false
+			t.Subtasks[i].CompletedAt = time.Time{}
+			return true
+		}
+	}
+	return false
+}
+
+// DeleteSubtask removes a subtask from the task
+func (t *Task) DeleteSubtask(subtaskID int) bool {
+	for i, subtask := range t.Subtasks {
+		if subtask.ID == subtaskID {
+			t.Subtasks = append(t.Subtasks[:i], t.Subtasks[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// AddAttachment adds a new attachment to the task
+func (t *Task) AddAttachment(filename, contentType, path string, size int64) {
+	attachment := Attachment{
+		ID:          len(t.Attachments) + 1,
+		Filename:    filename,
+		ContentType: contentType,
+		Size:        size,
+		UploadedAt:  time.Now(),
+		Path:        path,
+	}
+	t.Attachments = append(t.Attachments, attachment)
+}
+
+// RemoveAttachment removes an attachment from the task
+func (t *Task) RemoveAttachment(attachmentID int) bool {
+	for i, attachment := range t.Attachments {
+		if attachment.ID == attachmentID {
+			t.Attachments = append(t.Attachments[:i], t.Attachments[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// ShareWith shares the task with another user
+func (t *Task) ShareWith(username string) {
+	// Check if already shared with this user
+	for _, shared := range t.SharedWith {
+		if shared == username {
+			return
+		}
+	}
+	t.SharedWith = append(t.SharedWith, username)
+}
+
+// UnshareWith removes sharing with a user
+func (t *Task) UnshareWith(username string) bool {
+	for i, shared := range t.SharedWith {
+		if shared == username {
+			t.SharedWith = append(t.SharedWith[:i], t.SharedWith[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// MarkCompleted marks the task as completed
+func (t *Task) MarkCompleted() {
+	t.Completed = true
+	t.CompletedAt = time.Now()
+}
+
+// MarkIncomplete marks the task as not completed
+func (t *Task) MarkIncomplete() {
+	t.Completed = false
+	t.CompletedAt = time.Time{}
 }
 
 // Simple ID generator (in a real app, this would be more sophisticated)

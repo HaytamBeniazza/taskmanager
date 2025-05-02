@@ -291,18 +291,257 @@ func (s *BoltDBStorage) GetStats() (map[string]interface{}, error) {
 	return stats, err
 }
 
-// Close closes the database
+// Close closes the database connection
 func (s *BoltDBStorage) Close() error {
 	return s.db.Close()
 }
 
+// Filter filters tasks based on the provided options
+func (s *BoltDBStorage) Filter(options FilterOptions) ([]*Task, error) {
+	tasks, err := s.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	
+	return FilterTasks(tasks, options), nil
+}
+
+// Sort sorts tasks based on the provided options
+func (s *BoltDBStorage) Sort(tasks []*Task, options SortOptions) []*Task {
+	return SortTasks(tasks, options)
+}
+
+// GetCategories returns all unique categories
+func (s *BoltDBStorage) GetCategories() ([]string, error) {
+	tasks, err := s.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	
+	categories := make(map[string]bool)
+	for _, task := range tasks {
+		if task.Category != "" {
+			categories[task.Category] = true
+		}
+	}
+	
+	uniqueCategories := make([]string, 0, len(categories))
+	for category := range categories {
+		uniqueCategories = append(uniqueCategories, category)
+	}
+	
+	return uniqueCategories, nil
+}
+
+// GetTags returns all unique tags
+func (s *BoltDBStorage) GetTags() ([]string, error) {
+	tasks, err := s.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	
+	tags := make(map[string]bool)
+	for _, task := range tasks {
+		for _, tag := range task.Tags {
+			tags[tag] = true
+		}
+	}
+	
+	uniqueTags := make([]string, 0, len(tags))
+	for tag := range tags {
+		uniqueTags = append(uniqueTags, tag)
+	}
+	
+	return uniqueTags, nil
+}
+
+// SaveAttachment saves an attachment for a task
+func (s *BoltDBStorage) SaveAttachment(taskID int, filename string, data []byte, contentType string) (*Attachment, error) {
+	// Get the task first
+	task, err := s.Get(taskID)
+	if err != nil {
+		return nil, err
+	}
+	if task == nil {
+		return nil, fmt.Errorf("task not found")
+	}
+	
+	// Create a unique path for the attachment
+	path := fmt.Sprintf("attachments/%d/%d_%s", taskID, time.Now().Unix(), filename)
+	
+	// Create the attachment record
+	attachment := Attachment{
+		ID:          len(task.Attachments) + 1,
+		Filename:    filename,
+		ContentType: contentType,
+		Size:        int64(len(data)),
+		UploadedAt:  time.Now(),
+		Path:        path,
+	}
+	
+	// Add the attachment to the task
+	task.Attachments = append(task.Attachments, attachment)
+	
+	// Save the task with the new attachment metadata
+	err = s.Update(task)
+	if err != nil {
+		return nil, err
+	}
+	
+	// Save the attachment data to a separate bucket
+	err = s.db.Update(func(tx *bolt.Tx) error {
+		attachmentsBucket, err := tx.CreateBucketIfNotExists([]byte("attachments"))
+		if err != nil {
+			return err
+		}
+		
+		// Use taskID_attachmentID as the key
+		key := fmt.Sprintf("%d_%d", taskID, attachment.ID)
+		
+		return attachmentsBucket.Put([]byte(key), data)
+	})
+	
+	if err != nil {
+		return nil, err
+	}
+	
+	return &attachment, nil
+}
+
+// GetAttachment retrieves an attachment for a task
+func (s *BoltDBStorage) GetAttachment(taskID int, attachmentID int) (*Attachment, []byte, error) {
+	// Get the task first to get attachment metadata
+	task, err := s.Get(taskID)
+	if err != nil {
+		return nil, nil, err
+	}
+	if task == nil {
+		return nil, nil, fmt.Errorf("task not found")
+	}
+	
+	// Find the attachment metadata
+	var attachmentMeta *Attachment
+	for _, a := range task.Attachments {
+		if a.ID == attachmentID {
+			attachmentMeta = &a
+			break
+		}
+	}
+	
+	if attachmentMeta == nil {
+		return nil, nil, fmt.Errorf("attachment not found")
+	}
+	
+	// Get the attachment data from the attachments bucket
+	var data []byte
+	err = s.db.View(func(tx *bolt.Tx) error {
+		attachmentsBucket := tx.Bucket([]byte("attachments"))
+		if attachmentsBucket == nil {
+			return fmt.Errorf("attachments bucket not found")
+		}
+		
+		// Use taskID_attachmentID as the key
+		key := fmt.Sprintf("%d_%d", taskID, attachmentID)
+		
+		data = attachmentsBucket.Get([]byte(key))
+		if data == nil {
+			return fmt.Errorf("attachment data not found")
+		}
+		
+		return nil
+	})
+	
+	if err != nil {
+		return nil, nil, err
+	}
+	
+	return attachmentMeta, data, nil
+}
+
+// DeleteAttachment deletes an attachment from a task
+func (s *BoltDBStorage) DeleteAttachment(taskID int, attachmentID int) error {
+	// Get the task first
+	task, err := s.Get(taskID)
+	if err != nil {
+		return err
+	}
+	if task == nil {
+		return fmt.Errorf("task not found")
+	}
+	
+	// Find and remove the attachment from the task
+	found := false
+	for i, a := range task.Attachments {
+		if a.ID == attachmentID {
+			task.Attachments = append(task.Attachments[:i], task.Attachments[i+1:]...)
+			found = true
+			break
+		}
+	}
+	
+	if !found {
+		return fmt.Errorf("attachment not found")
+	}
+	
+	// Update the task without the attachment
+	err = s.Update(task)
+	if err != nil {
+		return err
+	}
+	
+	// Remove the attachment data from the attachments bucket
+	return s.db.Update(func(tx *bolt.Tx) error {
+		attachmentsBucket := tx.Bucket([]byte("attachments"))
+		if attachmentsBucket == nil {
+			return nil // Bucket doesn't exist, nothing to delete
+		}
+		
+		// Use taskID_attachmentID as the key
+		key := fmt.Sprintf("%d_%d", taskID, attachmentID)
+		
+		return attachmentsBucket.Delete([]byte(key))
+	})
+}
+
+// GetTasksByUser returns tasks created by or assigned to a specific user
+func (s *BoltDBStorage) GetTasksByUser(username string) ([]*Task, error) {
+	tasks, err := s.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	
+	userTasks := make([]*Task, 0)
+	for _, task := range tasks {
+		if task.CreatedBy == username || task.AssignedTo == username {
+			userTasks = append(userTasks, task)
+		}
+	}
+	
+	return userTasks, nil
+}
+
+// GetSharedTasks returns tasks shared with a specific user
+func (s *BoltDBStorage) GetSharedTasks(username string) ([]*Task, error) {
+	tasks, err := s.GetAll()
+	if err != nil {
+		return nil, err
+	}
+	
+	sharedTasks := make([]*Task, 0)
+	for _, task := range tasks {
+		for _, sharedWith := range task.SharedWith {
+			if sharedWith == username {
+				sharedTasks = append(sharedTasks, task)
+				break
+			}
+		}
+	}
+	
+	return sharedTasks, nil
+}
+
 // Helper functions
 
-// itob converts an int to a byte slice
-func itob(v int) []byte {
-	key := fmt.Sprintf("%d", v)
-	return []byte(key)
-}
 
 // indexTags adds tag indexes for a task
 func indexTags(tx *bolt.Tx, task *Task) error {
