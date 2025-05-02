@@ -58,7 +58,7 @@ const Dashboard: React.FC = () => {
       setLoading(true);
       setError(null);
       
-      // Get stats
+      // Get stats - using the correct endpoint
       const statsResponse = await axios.get('http://localhost:8080/stats');
       
       // Create a default stats object if some properties are missing
@@ -78,7 +78,7 @@ const Dashboard: React.FC = () => {
       setStats(statsData);
       
       // Get recent tasks
-      const tasksResponse = await axios.get('http://localhost:8080/tasks?limit=5');
+      const tasksResponse = await axios.get('http://localhost:8080/tasks');
       if (tasksResponse.data.tasks) {
         setRecentTasks(tasksResponse.data.tasks.slice(0, 5));
       } else {

@@ -108,7 +108,7 @@ const TaskList: React.FC = () => {
                 fullWidth
                 placeholder="Search tasks..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e: any) => setSearchTerm(e.target.value)}
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
@@ -120,10 +120,12 @@ const TaskList: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={2}>
               <FormControl fullWidth>
-                <InputLabel>Category</InputLabel>
+                <InputLabel id="category-label" component="label">Category</InputLabel>
                 <Select
+                  labelId="category-label"
+                  id="category-select"
                   value={category}
-                  onChange={(e) => setCategory(e.target.value)}
+                  onChange={(e: any) => setCategory(e.target.value)}
                   label="Category"
                 >
                   <MenuItem value="">All</MenuItem>
@@ -135,10 +137,12 @@ const TaskList: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={2}>
               <FormControl fullWidth>
-                <InputLabel>Priority</InputLabel>
+                <InputLabel id="priority-label" component="label">Priority</InputLabel>
                 <Select
+                  labelId="priority-label"
+                  id="priority-select"
                   value={priority}
-                  onChange={(e) => setPriority(e.target.value)}
+                  onChange={(e: any) => setPriority(e.target.value)}
                   label="Priority"
                 >
                   <MenuItem value="">All</MenuItem>
@@ -150,10 +154,12 @@ const TaskList: React.FC = () => {
             </Grid>
             <Grid item xs={12} sm={2}>
               <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
+                <InputLabel id="status-label" component="label">Status</InputLabel>
                 <Select
+                  labelId="status-label"
+                  id="status-select"
                   value={completed}
-                  onChange={(e) => setCompleted(e.target.value)}
+                  onChange={(e: any) => setCompleted(e.target.value)}
                   label="Status"
                 >
                   <MenuItem value="">All</MenuItem>
@@ -177,7 +183,7 @@ const TaskList: React.FC = () => {
       </Card>
 
       <Grid container spacing={3}>
-        {tasks.map((task) => (
+        {tasks.map((task: Task) => (
           <Grid item xs={12} sm={6} md={4} key={task.id}>
             <Card
               sx={{
@@ -206,7 +212,7 @@ const TaskList: React.FC = () => {
                   {task.description}
                 </Typography>
                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-                  {task.tags.map((tag) => (
+                  {task.tags.map((tag: string) => (
                     <Chip key={tag} label={tag} size="small" />
                   ))}
                 </Box>

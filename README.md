@@ -46,7 +46,7 @@ A modern task management application built with Go backend and React frontend. T
 2. Navigate to the project root
 3. Run the Go application:
    ```
-   go run main.go task.go storage.go handlers.go boltdb_storage.go
+   go run .
    ```
    
 ### Frontend Setup
