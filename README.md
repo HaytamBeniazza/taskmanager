@@ -10,6 +10,7 @@ A modern task management application built with Go backend and React frontend. T
 - **Task List Enhancements**: Added grid and list view options with improved sorting capabilities
 - **UI Components**: Redesigned cards, buttons, and chips for better user experience
 - **Frontend Dependencies**: Updated and optimized frontend dependencies
+- **Project Structure**: Reorganized codebase to follow professional Go project architecture patterns
 
 ## Features
 
@@ -28,6 +29,26 @@ A modern task management application built with Go backend and React frontend. T
 - Task listing with filtering and search
 - Task creation and editing
 - Form validation
+
+## Project Structure
+
+```
+taskmanager/
+├── cmd/                  # Application entry points
+│   └── api/              # API server executable
+│       └── main.go       # Main application entry point
+├── config/               # Configuration
+│   └── config.go         # Application configuration
+├── internal/             # Private application code
+│   ├── handlers/         # HTTP request handlers
+│   ├── middleware/       # HTTP middleware components
+│   ├── models/           # Data models
+│   ├── storage/          # Database interactions
+│   └── utils/            # Utility functions
+├── pkg/                  # Public libraries for external usage
+├── frontend/             # React frontend application
+└── README.md             # Project documentation
+```
 
 ## Tech Stack
 
@@ -55,7 +76,8 @@ A modern task management application built with Go backend and React frontend. T
 2. Navigate to the project root
 3. Run the Go application:
    ```
-   go run .
+   cd cmd/api
+   go run main.go
    ```
    
 ### Frontend Setup
