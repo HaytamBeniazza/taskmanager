@@ -127,6 +127,7 @@ func main() {
 	// API routes
 	router.GET("/health", taskHandler.HealthCheck)
 	router.GET("/stats", taskHandler.GetTaskStats)
+	router.GET("/analytics", taskHandler.GetTaskAnalytics)
 
 	// Tasks endpoints
 	router.GET("/tasks", taskHandler.GetTasks)
@@ -138,6 +139,12 @@ func main() {
 	router.PUT("/tasks/:id", taskHandler.UpdateTask)
 	router.DELETE("/tasks/:id", taskHandler.DeleteTask)
 
+	// Batch operations
+	router.POST("/tasks/batch/create", taskHandler.BatchCreateTasks)
+	router.PUT("/tasks/batch/update", taskHandler.BatchUpdateTasks)
+	router.DELETE("/tasks/batch/delete", taskHandler.BatchDeleteTasks)
+	router.POST("/tasks/batch/complete", taskHandler.BatchCompleteTasks)
+
 	// Task notes endpoints
 	router.POST("/tasks/:id/notes", taskHandler.AddTaskNote)
 	router.PUT("/tasks/:id/notes/:noteId", taskHandler.UpdateTaskNote)
@@ -146,6 +153,17 @@ func main() {
 	// Task tags endpoints
 	router.POST("/tasks/:id/tags", taskHandler.AddTaskTag)
 	router.DELETE("/tasks/:id/tags/:tag", taskHandler.RemoveTaskTag)
+
+	// Task reminder endpoints
+	router.GET("/tasks/:id/reminders", taskHandler.GetTaskReminders)
+	router.POST("/tasks/:id/reminders", taskHandler.AddTaskReminder)
+	router.DELETE("/tasks/:id/reminders/:reminderId", taskHandler.RemoveTaskReminder)
+
+	// Task subtask endpoints
+	router.POST("/tasks/:id/subtasks", taskHandler.AddTaskSubtask)
+	router.PUT("/tasks/:id/subtasks/:subtaskId/complete", taskHandler.CompleteTaskSubtask)
+	router.PUT("/tasks/:id/subtasks/:subtaskId/reopen", taskHandler.ReopenTaskSubtask)
+	router.DELETE("/tasks/:id/subtasks/:subtaskId", taskHandler.DeleteTaskSubtask)
 
 	// Start the server
 	port := fmt.Sprintf(":%d", config.Port)

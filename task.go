@@ -24,13 +24,22 @@ type Recurrence struct {
 	MonthOfYear    int       // for yearly pattern
 }
 
+// Reminder represents a notification for a task
+type Reminder struct {
+	ID          int       `json:"id"`
+	Time        time.Time `json:"time"`        // When to send the reminder
+	Description string    `json:"description"` // Optional custom message
+	Sent        bool      `json:"sent"`        // Whether the reminder has been sent
+	Method      string    `json:"method"`      // Email, push, etc.
+}
+
 // Note represents a comment or note on a task
 type Note struct {
 	ID        int
 	Content   string
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	Author    string    // who created the note
+	Author    string // who created the note
 }
 
 // Attachment represents a file attached to a task
@@ -54,23 +63,24 @@ type Subtask struct {
 
 // Task represents a task in our task manager
 type Task struct {
-	ID           int          `json:"id"`
-	Title        string       `json:"title"`
-	Description  string       `json:"description"`
-	Completed    bool         `json:"completed"`
-	CreatedAt    time.Time    `json:"createdAt"`
-	DueDate      time.Time    `json:"dueDate"`
-	CompletedAt  time.Time    `json:"completedAt,omitempty"`
-	Category     string       `json:"category"`
-	Priority     Priority     `json:"priority"`
-	Tags         []string     `json:"tags"`
-	Notes        []Note       `json:"notes"`
-	Recurrence   *Recurrence  `json:"recurrence,omitempty"` // Recurrence pattern (optional)
-	Subtasks     []Subtask    `json:"subtasks,omitempty"`
-	Attachments  []Attachment `json:"attachments,omitempty"`
-	AssignedTo   string       `json:"assignedTo,omitempty"` // Username of assignee
-	CreatedBy    string       `json:"createdBy,omitempty"`  // Username of creator
-	SharedWith   []string     `json:"sharedWith,omitempty"` // Usernames of people with access
+	ID          int          `json:"id"`
+	Title       string       `json:"title"`
+	Description string       `json:"description"`
+	Completed   bool         `json:"completed"`
+	CreatedAt   time.Time    `json:"createdAt"`
+	DueDate     time.Time    `json:"dueDate"`
+	CompletedAt time.Time    `json:"completedAt,omitempty"`
+	Category    string       `json:"category"`
+	Priority    Priority     `json:"priority"`
+	Tags        []string     `json:"tags"`
+	Notes       []Note       `json:"notes"`
+	Recurrence  *Recurrence  `json:"recurrence,omitempty"` // Recurrence pattern (optional)
+	Subtasks    []Subtask    `json:"subtasks,omitempty"`
+	Attachments []Attachment `json:"attachments,omitempty"`
+	AssignedTo  string       `json:"assignedTo,omitempty"` // Username of assignee
+	CreatedBy   string       `json:"createdBy,omitempty"`  // Username of creator
+	SharedWith  []string     `json:"sharedWith,omitempty"` // Usernames of people with access
+	Reminders   []Reminder   `json:"reminders,omitempty"`  // Task reminders
 }
 
 // NewTask creates a new task with the given title and description
@@ -85,6 +95,7 @@ func NewTask(title, description string) *Task {
 		Subtasks:    make([]Subtask, 0),
 		Attachments: make([]Attachment, 0),
 		SharedWith:  make([]string, 0),
+		Reminders:   make([]Reminder, 0),
 	}
 }
 
@@ -241,6 +252,40 @@ func (t *Task) MarkCompleted() {
 func (t *Task) MarkIncomplete() {
 	t.Completed = false
 	t.CompletedAt = time.Time{}
+}
+
+// AddReminder adds a new reminder to the task
+func (t *Task) AddReminder(reminderTime time.Time, description, method string) {
+	reminder := Reminder{
+		ID:          len(t.Reminders) + 1,
+		Time:        reminderTime,
+		Description: description,
+		Sent:        false,
+		Method:      method,
+	}
+	t.Reminders = append(t.Reminders, reminder)
+}
+
+// RemoveReminder removes a reminder from the task
+func (t *Task) RemoveReminder(reminderID int) bool {
+	for i, reminder := range t.Reminders {
+		if reminder.ID == reminderID {
+			t.Reminders = append(t.Reminders[:i], t.Reminders[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// MarkReminderSent marks a reminder as sent
+func (t *Task) MarkReminderSent(reminderID int) bool {
+	for i, reminder := range t.Reminders {
+		if reminder.ID == reminderID {
+			t.Reminders[i].Sent = true
+			return true
+		}
+	}
+	return false
 }
 
 // Simple ID generator (in a real app, this would be more sophisticated)
