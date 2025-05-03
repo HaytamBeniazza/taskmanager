@@ -2,6 +2,15 @@
 
 A modern task management application built with Go backend and React frontend. This project demonstrates a full-stack application with persistent storage, RESTful API, and a responsive UI.
 
+## Recent Updates
+
+- **Enhanced UI Theme**: Implemented a modern theme with improved color scheme, typography, and component styling
+- **Dashboard Improvements**: Added better visualization of task statistics, priority distribution, and category breakdown
+- **Advanced Task Filtering**: New filtering options including due date ranges, priority filtering, and tag-based search
+- **Task List Enhancements**: Added grid and list view options with improved sorting capabilities
+- **UI Components**: Redesigned cards, buttons, and chips for better user experience
+- **Frontend Dependencies**: Updated and optimized frontend dependencies
+
 ## Features
 
 ### Backend (Go):
@@ -70,6 +79,7 @@ A modern task management application built with Go backend and React frontend. T
 |--------|----------|-------------|
 | GET    | /health | Health check endpoint |
 | GET    | /stats | Get task statistics |
+| GET    | /analytics | Get task analytics data |
 | GET    | /tasks | Get all tasks |
 | GET    | /tasks/search?q={query} | Search tasks |
 | GET    | /tasks/categories | Get all task categories |
@@ -78,6 +88,8 @@ A modern task management application built with Go backend and React frontend. T
 | POST   | /tasks | Create a new task |
 | PUT    | /tasks/:id | Update a task |
 | DELETE | /tasks/:id | Delete a task |
+| POST   | /tasks/batch/complete | Complete multiple tasks |
+| DELETE | /tasks/batch/delete | Delete multiple tasks |
 | POST   | /tasks/:id/notes | Add a note to a task |
 | PUT    | /tasks/:id/notes/:noteId | Update a task note |
 | DELETE | /tasks/:id/notes/:noteId | Delete a task note |
