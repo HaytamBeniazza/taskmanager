@@ -10,8 +10,6 @@ import (
 	"github.com/HaytamBeniazza/taskmanager/internal/handlers"
 	"github.com/HaytamBeniazza/taskmanager/internal/models"
 	"github.com/HaytamBeniazza/taskmanager/internal/storage"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
 )
 
 func main() {
@@ -33,106 +31,155 @@ func main() {
 
 	// Create sample tasks if this is a new database
 	if createSampleData {
-		log.Println("Creating sample tasks...")
-
-		task1 := models.NewTask("Learn Go basics", "Study syntax, types, and basic concepts")
-		task1.Category = "Learning"
-		task1.Priority = models.Medium
-		task1.DueDate = time.Now().Add(24 * time.Hour)
-		task1.AddTag("go")
-		task1.AddTag("programming")
-		task1.AddNote("Focus on understanding goroutines and channels", "system")
-
-		task2 := models.NewTask("Build a web API", "Create a task manager REST API in Go")
-		task2.Category = "Development"
-		task2.Priority = models.High
-		task2.DueDate = time.Now().Add(72 * time.Hour)
-		task2.AddTag("go")
-		task2.AddTag("api")
-		task2.AddTag("rest")
-		task2.AddNote("Use Gin framework for routing", "system")
-
-		task3 := models.NewTask("Learn concurrency", "Study goroutines and channels")
-		task3.Category = "Learning"
-		task3.Priority = models.Low
-		task3.AddTag("go")
-		task3.AddTag("concurrency")
-
-		// Add sample tasks
-		if err := taskStorage.Add(task1); err != nil {
-			log.Printf("Failed to add sample task 1: %v", err)
-		}
-		if err := taskStorage.Add(task2); err != nil {
-			log.Printf("Failed to add sample task 2: %v", err)
-		}
-		if err := taskStorage.Add(task3); err != nil {
-			log.Printf("Failed to add sample task 3: %v", err)
+		log.Println("Initializing database with sample data...")
+		if err := createInitialData(taskStorage); err != nil {
+			log.Fatalf("Failed to create sample data: %v", err)
 		}
 	}
 
 	// Create task handler
 	taskHandler := handlers.NewTaskHandler(taskStorage)
 
-	// Set up Gin router
-	if cfg.Env == "production" {
-		gin.SetMode(gin.ReleaseMode)
+	// Set up router with all routes
+	router := handlers.SetupRouter(taskHandler)
+
+	// Start server
+	addr := fmt.Sprintf(":%d", cfg.Port)
+	log.Printf("Server starting on %s in %s mode", addr, cfg.Env)
+	if err := router.Run(addr); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
 	}
-	router := gin.Default()
+}
 
-	// Add CORS middleware
-	router.Use(cors.New(cors.Config{
-		AllowOrigins:     []string{cfg.CorsOrigin},
-		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
-		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
-		ExposeHeaders:    []string{"Content-Length"},
-		AllowCredentials: true,
-		MaxAge:           12 * time.Hour,
-	}))
+// createInitialData adds some sample tasks to the database
+func createInitialData(storage storage.TaskStorage) error {
+	now := time.Now()
+	tomorrow := now.Add(24 * time.Hour)
+	nextWeek := now.Add(7 * 24 * time.Hour)
 
-	// API routes
-	router.GET("/health", taskHandler.HealthCheck)
-	router.GET("/stats", taskHandler.GetTaskStats)
-	router.GET("/analytics", taskHandler.GetTaskAnalytics)
+	// Sample tasks
+	tasks := []*models.Task{
+		{
+			Title:       "Complete project proposal",
+			Description: "Draft and submit the initial project proposal document",
+			Priority:    models.High,
+			Category:    "Work",
+			DueDate:     tomorrow,
+			Tags:        []string{"work", "proposal", "urgent"},
+			CreatedAt:   now,
+			Subtasks: []models.Subtask{
+				{ID: 1, Title: "Research competitors", Completed: true},
+				{ID: 2, Title: "Create outline", Completed: true},
+				{ID: 3, Title: "Write first draft", Completed: false},
+				{ID: 4, Title: "Get feedback", Completed: false},
+				{ID: 5, Title: "Finalize document", Completed: false},
+			},
+			CreatedBy: "admin",
+		},
+		{
+			Title:       "Buy groceries",
+			Description: "Get weekly groceries from the supermarket",
+			Priority:    models.Medium,
+			Category:    "Personal",
+			DueDate:     tomorrow,
+			Tags:        []string{"shopping", "food", "weekly"},
+			CreatedAt:   now,
+			Subtasks: []models.Subtask{
+				{ID: 1, Title: "Make shopping list", Completed: true},
+				{ID: 2, Title: "Check fridge for needed items", Completed: false},
+			},
+			CreatedBy: "admin",
+		},
+		{
+			Title:       "Schedule dentist appointment",
+			Description: "Call the dentist for a regular checkup",
+			Priority:    models.Low,
+			Category:    "Health",
+			DueDate:     nextWeek,
+			Tags:        []string{"health", "appointment"},
+			CreatedAt:   now,
+			CreatedBy:   "admin",
+		},
+		{
+			Title:       "Review quarterly budget",
+			Description: "Review and adjust the quarterly budget plan",
+			Priority:    models.High,
+			Category:    "Finance",
+			DueDate:     nextWeek,
+			Tags:        []string{"finance", "quarterly", "budget"},
+			CreatedAt:   now.Add(-48 * time.Hour),
+			CreatedBy:   "admin",
+		},
+		{
+			Title:       "Plan team building event",
+			Description: "Organize a team building activity for the department",
+			Priority:    models.Medium,
+			Category:    "Work",
+			DueDate:     nextWeek.Add(72 * time.Hour),
+			Tags:        []string{"work", "team", "event"},
+			CreatedAt:   now.Add(-24 * time.Hour),
+			CreatedBy:   "admin",
+		},
+		{
+			Title:       "Renew car insurance",
+			Description: "Shop around for the best car insurance rates",
+			Priority:    models.High,
+			Category:    "Finance",
+			DueDate:     nextWeek.Add(48 * time.Hour),
+			Tags:        []string{"finance", "car", "insurance"},
+			CreatedAt:   now.Add(-72 * time.Hour),
+			CreatedBy:   "admin",
+		},
+		{
+			Title:       "Prepare for presentation",
+			Description: "Create slides and prepare talking points for the client presentation",
+			Priority:    models.High,
+			Category:    "Work",
+			DueDate:     tomorrow.Add(24 * time.Hour),
+			Tags:        []string{"work", "presentation", "client"},
+			CreatedAt:   now.Add(-12 * time.Hour),
+			Completed:   true,
+			CompletedAt: now.Add(-1 * time.Hour),
+			CreatedBy:   "admin",
+		},
+		{
+			Title:       "Fix leaking faucet",
+			Description: "Replace the washer in the kitchen sink faucet",
+			Priority:    models.Medium,
+			Category:    "Home",
+			DueDate:     tomorrow.Add(48 * time.Hour),
+			Tags:        []string{"home", "repair", "plumbing"},
+			CreatedAt:   now.Add(-36 * time.Hour),
+			CreatedBy:   "admin",
+		},
+		{
+			Title:       "Call mom",
+			Description: "Weekly call with mom to catch up",
+			Priority:    models.Medium,
+			Category:    "Personal",
+			DueDate:     now.Add(3 * 24 * time.Hour),
+			Tags:        []string{"personal", "family", "weekly"},
+			CreatedAt:   now.Add(-2 * time.Hour),
+			CreatedBy:   "admin",
+		},
+		{
+			Title:       "Book vacation flights",
+			Description: "Search for and book flights for summer vacation",
+			Priority:    models.Medium,
+			Category:    "Travel",
+			DueDate:     now.Add(30 * 24 * time.Hour),
+			Tags:        []string{"travel", "vacation", "planning"},
+			CreatedAt:   now.Add(-5 * 24 * time.Hour),
+			CreatedBy:   "admin",
+		},
+	}
 
-	// Tasks endpoints
-	router.GET("/tasks", taskHandler.GetTasks)
-	router.GET("/tasks/search", taskHandler.SearchTasks)
-	router.GET("/tasks/categories", taskHandler.GetCategories)
-	router.GET("/tasks/tags", taskHandler.GetTags)
-	router.GET("/tasks/:id", taskHandler.GetTask)
-	router.POST("/tasks", taskHandler.CreateTask)
-	router.PUT("/tasks/:id", taskHandler.UpdateTask)
-	router.DELETE("/tasks/:id", taskHandler.DeleteTask)
+	// Add tasks to database
+	for _, task := range tasks {
+		if err := storage.Add(task); err != nil {
+			return err
+		}
+	}
 
-	// Batch operations
-	router.POST("/tasks/batch/create", taskHandler.BatchCreateTasks)
-	router.PUT("/tasks/batch/update", taskHandler.BatchUpdateTasks)
-	router.DELETE("/tasks/batch/delete", taskHandler.BatchDeleteTasks)
-	router.POST("/tasks/batch/complete", taskHandler.BatchCompleteTasks)
-
-	// Task notes endpoints
-	router.POST("/tasks/:id/notes", taskHandler.AddTaskNote)
-	router.PUT("/tasks/:id/notes/:noteId", taskHandler.UpdateTaskNote)
-	router.DELETE("/tasks/:id/notes/:noteId", taskHandler.DeleteTaskNote)
-
-	// Task tags endpoints
-	router.POST("/tasks/:id/tags", taskHandler.AddTaskTag)
-	router.DELETE("/tasks/:id/tags/:tag", taskHandler.RemoveTaskTag)
-
-	// Task reminder endpoints
-	router.GET("/tasks/:id/reminders", taskHandler.GetTaskReminders)
-	router.POST("/tasks/:id/reminders", taskHandler.AddTaskReminder)
-	router.DELETE("/tasks/:id/reminders/:reminderId", taskHandler.RemoveTaskReminder)
-
-	// Task subtask endpoints
-	router.POST("/tasks/:id/subtasks", taskHandler.AddTaskSubtask)
-	router.PUT("/tasks/:id/subtasks/:subtaskId/complete", taskHandler.CompleteTaskSubtask)
-	router.PUT("/tasks/:id/subtasks/:subtaskId/reopen", taskHandler.ReopenTaskSubtask)
-	router.DELETE("/tasks/:id/subtasks/:subtaskId", taskHandler.DeleteTaskSubtask)
-
-	// Start the server
-	port := fmt.Sprintf(":%d", cfg.Port)
-	fmt.Printf("Server starting on port %d in %s mode\n", cfg.Port, cfg.Env)
-	fmt.Printf("Using database: %s\n", cfg.DBPath)
-	router.Run(port)
+	return nil
 }
