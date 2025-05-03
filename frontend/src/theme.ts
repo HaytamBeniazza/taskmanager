@@ -1,63 +1,111 @@
 import { createTheme } from '@mui/material/styles';
 
+// Create a theme instance.
 const theme = createTheme({
   palette: {
+    mode: 'light',
     primary: {
-      main: '#1976d2',
-      light: '#42a5f5',
-      dark: '#1565c0',
+      main: '#2563eb', // Modern blue
+      light: '#60a5fa',
+      dark: '#1d4ed8',
+      contrastText: '#ffffff',
     },
     secondary: {
-      main: '#9c27b0',
-      light: '#ba68c8',
-      dark: '#7b1fa2',
+      main: '#8b5cf6', // Purple
+      light: '#a78bfa',
+      dark: '#7c3aed',
+      contrastText: '#ffffff',
+    },
+    success: {
+      main: '#10b981', // Green
+      light: '#34d399',
+      dark: '#059669',
+    },
+    warning: {
+      main: '#f59e0b', // Amber
+      light: '#fbbf24',
+      dark: '#d97706',
+    },
+    error: {
+      main: '#ef4444', // Red
+      light: '#f87171',
+      dark: '#dc2626',
+    },
+    info: {
+      main: '#3b82f6', // Blue
+      light: '#60a5fa',
+      dark: '#2563eb',
     },
     background: {
-      default: '#f5f5f5',
+      default: '#f8fafc', // Light gray
       paper: '#ffffff',
+    },
+    text: {
+      primary: '#1e293b', // Slate 800
+      secondary: '#64748b', // Slate 500
+      disabled: '#94a3b8', // Slate 400
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"Inter", "Roboto", "Helvetica", "Arial", sans-serif',
     h1: {
-      fontSize: '2.5rem',
-      fontWeight: 500,
+      fontWeight: 700,
     },
     h2: {
-      fontSize: '2rem',
-      fontWeight: 500,
+      fontWeight: 700,
     },
     h3: {
-      fontSize: '1.75rem',
-      fontWeight: 500,
+      fontWeight: 600,
     },
     h4: {
-      fontSize: '1.5rem',
-      fontWeight: 500,
+      fontWeight: 600,
     },
     h5: {
-      fontSize: '1.25rem',
-      fontWeight: 500,
+      fontWeight: 600,
     },
     h6: {
-      fontSize: '1rem',
-      fontWeight: 500,
+      fontWeight: 600,
     },
+  },
+  shape: {
+    borderRadius: 10,
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
           textTransform: 'none',
-          borderRadius: 8,
+          fontWeight: 600,
+          borderRadius: '8px',
+          boxShadow: 'none',
+          padding: '8px 16px',
+        },
+        containedPrimary: {
+          '&:hover': {
+            boxShadow: '0 4px 8px rgba(37, 99, 235, 0.2)',
+          },
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: 12,
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+          borderRadius: '12px',
+          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden',
+          transition: 'box-shadow 0.3s ease, transform 0.3s ease',
+          '&:hover': {
+            boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+            transform: 'translateY(-2px)',
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          borderRadius: '6px',
+          fontWeight: 500,
         },
       },
     },
