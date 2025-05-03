@@ -95,7 +95,7 @@ const Dashboard: React.FC = () => {
       setError(null);
       
       // Get stats - using the correct endpoint
-      const statsResponse = await axios.get('http://localhost:8080/stats');
+      const statsResponse = await axios.get('http://localhost:8080/api/v1/stats');
       
       // Create a default stats object if some properties are missing
       const statsData: TaskStats = {
@@ -115,7 +115,7 @@ const Dashboard: React.FC = () => {
       
       // Get analytics data from our new endpoint
       try {
-        const analyticsResponse = await axios.get('http://localhost:8080/analytics');
+        const analyticsResponse = await axios.get('http://localhost:8080/api/v1/analytics');
         setAnalytics(analyticsResponse.data);
       } catch (e) {
         console.error('Analytics endpoint not available:', e);
@@ -134,7 +134,7 @@ const Dashboard: React.FC = () => {
       }
       
       // Get tasks
-      const tasksResponse = await axios.get('http://localhost:8080/tasks?perPage=20');
+      const tasksResponse = await axios.get('http://localhost:8080/api/v1/tasks?perPage=20');
       
       if (tasksResponse.data.tasks) {
         const allTasks = tasksResponse.data.tasks;
@@ -148,14 +148,14 @@ const Dashboard: React.FC = () => {
         // Upcoming tasks (next 5 due, not completed and not overdue)
         const now = new Date();
         const upcoming = allTasks
-          .filter(task => !task.completed && task.dueDate && isAfter(parseISO(task.dueDate), now))
-          .sort((a, b) => parseISO(a.dueDate).getTime() - parseISO(b.dueDate).getTime());
+          .filter((task: RecentTask) => !task.completed && task.dueDate && isAfter(parseISO(task.dueDate), now))
+          .sort((a: RecentTask, b: RecentTask) => parseISO(a.dueDate).getTime() - parseISO(b.dueDate).getTime());
         setUpcomingTasks(upcoming.slice(0, 5));
         
         // Overdue tasks
         const overdue = allTasks
-          .filter(task => !task.completed && task.dueDate && !isAfter(parseISO(task.dueDate), now))
-          .sort((a, b) => parseISO(b.dueDate).getTime() - parseISO(a.dueDate).getTime());
+          .filter((task: RecentTask) => !task.completed && task.dueDate && !isAfter(parseISO(task.dueDate), now))
+          .sort((a: RecentTask, b: RecentTask) => parseISO(b.dueDate).getTime() - parseISO(a.dueDate).getTime());
         setOverdueTasks(overdue.slice(0, 5));
       } else {
         setRecentTasks([]);
@@ -192,7 +192,7 @@ const Dashboard: React.FC = () => {
       case 'low':
         return 'success';
       default:
-        return 'default';
+        return 'primary';
     }
   };
 

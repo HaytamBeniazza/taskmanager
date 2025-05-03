@@ -45,6 +45,7 @@ import {
   Tabs,
   Tab,
   Snackbar,
+  CircularProgress,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -133,7 +134,7 @@ const TaskList: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/tasks/categories');
+      const response = await axios.get('http://localhost:8080/api/v1/tasks/categories');
       setCategories(response.data.categories || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
@@ -142,7 +143,7 @@ const TaskList: React.FC = () => {
 
   const fetchTags = async () => {
     try {
-      const response = await axios.get('http://localhost:8080/tasks/tags');
+      const response = await axios.get('http://localhost:8080/api/v1/tasks/tags');
       setTags(response.data.tags || []);
     } catch (error) {
       console.error('Error fetching tags:', error);
@@ -175,7 +176,7 @@ const TaskList: React.FC = () => {
         params.append('completed', 'false');
       }
 
-      const response = await axios.get(`http://localhost:8080/tasks?${params.toString()}`);
+      const response = await axios.get(`http://localhost:8080/api/v1/tasks?${params.toString()}`);
       setTasks(response.data.tasks || []);
       setPaginationInfo(response.data.pagination || {
         total: 0,
@@ -211,7 +212,7 @@ const TaskList: React.FC = () => {
       params.append('page', '1'); // Reset to first page on new search
       params.append('perPage', perPage.toString());
 
-      const response = await axios.get(`http://localhost:8080/tasks?${params.toString()}`);
+      const response = await axios.get(`http://localhost:8080/api/v1/tasks?${params.toString()}`);
       setTasks(response.data.tasks || []);
       setPaginationInfo(response.data.pagination || {
         total: 0,
@@ -285,7 +286,7 @@ const TaskList: React.FC = () => {
 
   const handleDeleteSelected = async () => {
     try {
-      await axios.delete('http://localhost:8080/tasks/batch/delete', {
+      await axios.delete('http://localhost:8080/api/v1/tasks/batch/delete', {
         data: { taskIds: selectedTasks }
       });
       setSnackbar({
@@ -308,7 +309,7 @@ const TaskList: React.FC = () => {
 
   const handleCompleteSelected = async () => {
     try {
-      await axios.post('http://localhost:8080/tasks/batch/complete', {
+      await axios.post('http://localhost:8080/api/v1/tasks/batch/complete', {
         taskIds: selectedTasks
       });
       setSnackbar({
@@ -472,8 +473,8 @@ const TaskList: React.FC = () => {
                   <Typography variant="caption" color="text.secondary">
                     {task.dueDate ? format(new Date(task.dueDate), 'MMM d, yyyy') : 'No due date'}
                   </Typography>
-                </Box>
-                
+      </Box>
+
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   {task.subtasks && task.subtasks.length > 0 && (
                     <Tooltip title={`${task.subtasks.length} subtasks`}>
@@ -623,61 +624,61 @@ const TaskList: React.FC = () => {
         <Divider sx={{ mb: 2 }} />
         
         <Stack spacing={3}>
-          <TextField
-            fullWidth
+              <TextField
+                fullWidth
             label="Search"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            placeholder="Search tasks..."
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon />
-                </InputAdornment>
-              ),
-            }}
-          />
+                placeholder="Search tasks..."
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon />
+                    </InputAdornment>
+                  ),
+                }}
+              />
           
-          <FormControl fullWidth>
+              <FormControl fullWidth>
             <InputLabel>Category</InputLabel>
-            <Select
-              value={category}
+                <Select
+                  value={category}
               onChange={(e) => setCategory(e.target.value)}
-              label="Category"
-            >
-              <MenuItem value="">All</MenuItem>
+                  label="Category"
+                >
+                  <MenuItem value="">All</MenuItem>
               {categories.map((cat) => (
                 <MenuItem key={cat} value={cat}>{cat}</MenuItem>
               ))}
-            </Select>
-          </FormControl>
+                </Select>
+              </FormControl>
           
-          <FormControl fullWidth>
+              <FormControl fullWidth>
             <InputLabel>Priority</InputLabel>
-            <Select
-              value={priority}
+                <Select
+                  value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              label="Priority"
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="high">High</MenuItem>
-              <MenuItem value="medium">Medium</MenuItem>
-              <MenuItem value="low">Low</MenuItem>
-            </Select>
-          </FormControl>
+                  label="Priority"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="high">High</MenuItem>
+                  <MenuItem value="medium">Medium</MenuItem>
+                  <MenuItem value="low">Low</MenuItem>
+                </Select>
+              </FormControl>
           
-          <FormControl fullWidth>
+              <FormControl fullWidth>
             <InputLabel>Status</InputLabel>
-            <Select
-              value={completed}
+                <Select
+                  value={completed}
               onChange={(e) => setCompleted(e.target.value)}
-              label="Status"
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="true">Completed</MenuItem>
-              <MenuItem value="false">Pending</MenuItem>
-            </Select>
-          </FormControl>
+                  label="Status"
+                >
+                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="true">Completed</MenuItem>
+                  <MenuItem value="false">Pending</MenuItem>
+                </Select>
+              </FormControl>
           
           <FormControl fullWidth>
             <InputLabel>Tag</InputLabel>
@@ -745,11 +746,11 @@ const TaskList: React.FC = () => {
             >
               Reset
             </Button>
-            <Button 
-              variant="contained" 
-              onClick={handleSearch}
-              startIcon={<SearchIcon />}
-            >
+              <Button
+                variant="contained"
+                onClick={handleSearch}
+                startIcon={<SearchIcon />}
+              >
               Apply Filters
             </Button>
           </Box>
@@ -832,7 +833,7 @@ const TaskList: React.FC = () => {
                       onClick={() => setConfirmDeleteOpen(true)}
                     >
                       Delete {selectedTasks.length} Tasks
-                    </Button>
+              </Button>
                   </>
                 )}
               </Box>
@@ -888,10 +889,10 @@ const TaskList: React.FC = () => {
         <Box sx={{ textAlign: 'center', my: 8 }}>
           <Typography variant="h6" color="text.secondary" gutterBottom>
             No tasks found
-          </Typography>
+                  </Typography>
           <Typography color="text.secondary" paragraph>
             Try changing your filters or create a new task
-          </Typography>
+                </Typography>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -900,7 +901,7 @@ const TaskList: React.FC = () => {
           >
             Create New Task
           </Button>
-        </Box>
+                </Box>
       ) : (
         <>
           {/* Tasks list/grid */}
@@ -914,8 +915,8 @@ const TaskList: React.FC = () => {
                 page={paginationInfo.currentPage}
                 color="primary"
                 onChange={handlePageChange}
-              />
-            </Box>
+                  />
+                </Box>
           )}
         </>
       )}
